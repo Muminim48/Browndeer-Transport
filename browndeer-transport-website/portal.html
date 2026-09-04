@@ -111,30 +111,38 @@
     // Note: When posting from an external domain, we rely on doPost in Google Apps Script
     fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      body: JSON.stringify(payload),
-      // In older browsers or strict environments, mode 'no-cors' might be needed,
-      // but standard fetch usually handles Google Apps Script if 'execute as me, access anyone' is set.
+      body: JSON.stringify(payload)
     })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        renderSettlements(data.settlements);
-        loginScreen.classList.add("hidden");
-        dashboardScreen.classList.remove("hidden");
-      } else {
+    .then(async response => {
+      // Catch Google HTML error pages (like 500 crashes or permissions blocks)
+      const text = await response.text();
+      try {
+        const data = JSON.parse(text);
+        if (data.success) {
+          renderSettlements(data.settlements);
+          loginScreen.classList.add("hidden");
+          dashboardScreen.classList.remove("hidden");
+        } else {
+          loginError.textContent = data.error || "Invalid Username or PIN.";
+          loginError.style.display = "block";
+        }
+      } catch (err) {
+        // If Google sends back HTML instead of data, print it to the screen
+        console.error("Google responded with:", text);
+        loginError.textContent = "Google Error: " + (text.includes("script.google.com") ? "Permissions or URL issue." : "Script crashed. Check Apps Script logs.");
         loginError.style.display = "block";
       }
     })
     .catch(error => {
-      console.error(error);
-      loginError.textContent = "Connection error. Please try again.";
+      // True network or CORS blocks
+      console.error("Network/CORS Error:", error);
+      loginError.textContent = "Network error. Please try again.";
       loginError.style.display = "block";
     })
     .finally(() => {
       loginBtn.disabled = false;
       loginBtn.textContent = "View Settlements";
     });
-  });
 
   function renderSettlements(settlements) {
     if (settlements.length === 0) {
