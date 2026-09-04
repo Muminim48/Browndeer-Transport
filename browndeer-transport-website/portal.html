@@ -108,12 +108,9 @@
       pin: document.getElementById("pin").value
     };
 
+    // Standard simple POST request without custom headers to avoid CORS preflight blocks
     fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
-      },
-      redirect: "follow",
       body: JSON.stringify(payload)
     })
     .then(async response => {
@@ -130,13 +127,13 @@
         }
       } catch (err) {
         console.error("Google responded with:", text);
-        loginError.textContent = "Google Error: " + (text.includes("script.google.com") ? "Permissions or URL issue." : "Script crashed. Check Apps Script logs.");
+        loginError.textContent = "Server response error. Please check script execution.";
         loginError.style.display = "block";
       }
     })
     .catch(error => {
       console.error("Network/CORS Error:", error);
-      loginError.textContent = "Network error. Please try again.";
+      loginError.textContent = "Connection error. Please try again.";
       loginError.style.display = "block";
     })
     .finally(() => {
