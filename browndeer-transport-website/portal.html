@@ -154,12 +154,15 @@
         cleanDate = `${parts[1]}/${parts[2]}/${parts[0]}`; 
       }
 
+      // Google Drive embed preview link
+      const previewUrl = `https://drive.google.com/file/d/${s.fileId}/preview`;
+
       return `
       <div class="settlement-card">
         <div class="settlement-info">
           <h3>Week Ending: ${cleanDate}</h3>
         </div>
-        <a href="${s.pdfUrl}" target="_blank" class="btn-outline" style="background: #0f172a; color: white; padding: 10px 18px; text-decoration: none; border-radius: 6px; display: inline-block;">Download PDF</a>
+        <a href="${previewUrl}" target="_blank" class="btn-outline" style="background: #0f172a; color: white; padding: 10px 18px; text-decoration: none; border-radius: 6px; display: inline-block;">View / Download PDF</a>
       </div>
       `;
     }).join("");
