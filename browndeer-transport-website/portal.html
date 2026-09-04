@@ -139,34 +139,41 @@
   });
 
   function renderSettlements(settlements) {
-    if (!settlements || settlements.length === 0) {
-      settlementList.innerHTML = "<p style='color:#64748b;'>No settlements found for your account yet.</p>";
-      return;
+  if (!settlements || settlements.length === 0) {
+    settlementList.innerHTML = "<p style='color:#64748b;'>No settlements found for your account yet.</p>";
+    return;
+  }
+
+  // Force sort settlements newest to oldest
+  settlements.sort((a, b) => new Date(b.weekEnding || b.dateStr) - new Date(a.weekEnding || a.dateStr));
+
+  settlementList.innerHTML = settlements.map(s => {
+    let rawDate = s.weekEnding || s.dateStr;
+    let cleanDate = rawDate;
+
+    // Safely format any valid date string to MM/DD/YYYY
+    if (rawDate) {
+      const d = new Date(rawDate);
+      if (!isNaN(d.getTime())) {
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const year = d.getFullYear();
+        cleanDate = `${month}/${day}/${year}`;
+      }
     }
 
-    // Force sort settlements newest to oldest
-    settlements.sort((a, b) => new Date(b.weekEnding) - new Date(a.weekEnding));
+    const previewUrl = `https://drive.google.com/file/d/${s.fileId}/preview`;
 
-    settlementList.innerHTML = settlements.map(s => {
-      let cleanDate = s.weekEnding || s.dateStr;
-      if (cleanDate && cleanDate.includes('T')) {
-        const parts = cleanDate.split('T')[0].split('-');
-        cleanDate = `${parts[1]}/${parts[2]}/${parts[0]}`; 
-      }
-
-      // Google Drive embed preview link
-      const previewUrl = `https://drive.google.com/file/d/${s.fileId}/preview`;
-
-      return `
-      <div class="settlement-card">
-        <div class="settlement-info">
-          <h3>Week Ending: ${cleanDate}</h3>
-        </div>
-        <a href="${previewUrl}" target="_blank" class="btn-outline" style="background: #0f172a; color: white; padding: 10px 18px; text-decoration: none; border-radius: 6px; display: inline-block;">View / Download PDF</a>
+    return `
+    <div class="settlement-card">
+      <div class="settlement-info">
+        <h3>Week Ending: ${cleanDate}</h3>
       </div>
-      `;
-    }).join("");
-  }
+      <a href="${previewUrl}" target="_blank" class="btn-outline" style="background: #0f172a; color: white; padding: 10px 18px; text-decoration: none; border-radius: 6px; display: inline-block;">View / Download PDF</a>
+    </div>
+    `;
+  }).join("");
+}
 
   document.getElementById("logoutBtn").addEventListener("click", () => {
     dashboardScreen.classList.add("hidden");
