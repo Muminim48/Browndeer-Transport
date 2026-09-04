@@ -87,8 +87,7 @@
 </main>
 
 <script>
-  // 🛑 PASTE YOUR DEPLOYED WEB APP URL HERE 🛑
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbywl6G4laAJ0Qv9i5OFj6LXTV8Vz8mgIe4wZJa9pX3Rq2TxjwDE88JSF_Dd89GROWyEKw/exec";
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/YOUR_EXEC_URL_HERE/exec";
 
   const loginForm = document.getElementById("portalLogin");
   const loginBtn = document.getElementById("loginBtn");
@@ -108,7 +107,6 @@
       pin: document.getElementById("pin").value
     };
 
-    // Standard simple POST request without custom headers to avoid CORS preflight blocks
     fetch(APPS_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify(payload)
@@ -126,13 +124,11 @@
           loginError.style.display = "block";
         }
       } catch (err) {
-        console.error("Google responded with:", text);
-        loginError.textContent = "Server response error. Please check script execution.";
+        loginError.textContent = "Server response error.";
         loginError.style.display = "block";
       }
     })
     .catch(error => {
-      console.error("Network/CORS Error:", error);
       loginError.textContent = "Connection error. Please try again.";
       loginError.style.display = "block";
     })
@@ -148,10 +144,9 @@
       return;
     }
     
-    // Sort by date, newest to oldest
     settlements.sort((a, b) => new Date(b.weekEnding) - new Date(a.weekEnding));
 
-    settlementList.innerHTML = settlements.map(s => {
+    settlementList.innerHTML = settlements.map((s, index) => {
       let cleanDate = s.weekEnding;
       if (cleanDate.includes('T')) {
         const parts = cleanDate.split('T')[0].split('-');
@@ -163,10 +158,19 @@
         <div class="settlement-info">
           <h3>Week Ending: ${cleanDate}</h3>
         </div>
-        <a href="${s.pdfUrl}" target="_blank" class="btn-outline" style="background: #0f172a; color: white; border: none;">Download PDF</a>
+        <button onclick="downloadPdf('${s.pdfBase64}', '${s.fileName}')" class="btn-outline" style="background: #0f172a; color: white; border: none; cursor: pointer;">Download PDF</button>
       </div>
       `;
     }).join("");
+  }
+
+  function downloadPdf(base64Data, fileName) {
+    const link = document.createElement('a');
+    link.href = 'data:application/pdf;base64,' + base64Data;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   document.getElementById("logoutBtn").addEventListener("click", () => {
