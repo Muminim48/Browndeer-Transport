@@ -144,32 +144,34 @@
     return;
   }
 
-  // Force sort settlements newest to oldest
-  settlements.sort((a, b) => new Date(b.weekEnding || b.dateStr) - new Date(a.weekEnding || a.dateStr));
+  // Sort settlements newest to oldest
+  settlements.sort((a, b) => new Date(b.weekEnding || b.dateStr || b.date) - new Date(a.weekEnding || a.dateStr || a.date));
 
   settlementList.innerHTML = settlements.map(s => {
-    let rawDate = s.weekEnding || s.dateStr;
+    // 1. Grab whichever date field exists
+    let rawDate = s.weekEnding || s.dateStr || s.date || "";
     let cleanDate = rawDate;
 
-    // Safely format any valid date string to MM/DD/YYYY
+    // 2. Direct Date Object Parsing (NO STRING SPLITTING)
     if (rawDate) {
       const d = new Date(rawDate);
       if (!isNaN(d.getTime())) {
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const year = d.getFullYear();
+        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        const year = d.getUTCFullYear();
         cleanDate = `${month}/${day}/${year}`;
       }
     }
 
-    const previewUrl = `https://drive.google.com/file/d/${s.fileId}/preview`;
+    // 3. Fallback link handler (uses pdfUrl or constructs Drive preview)
+    const fileUrl = s.pdfUrl || (s.fileId ? `https://drive.google.com/file/d/${s.fileId}/preview` : '#');
 
     return `
     <div class="settlement-card">
       <div class="settlement-info">
         <h3>Week Ending: ${cleanDate}</h3>
       </div>
-      <a href="${previewUrl}" target="_blank" class="btn-outline" style="background: #0f172a; color: white; padding: 10px 18px; text-decoration: none; border-radius: 6px; display: inline-block;">View / Download PDF</a>
+      <a href="${fileUrl}" target="_blank" class="btn-outline" style="background: #0f172a; color: white; padding: 10px 18px; text-decoration: none; border-radius: 6px; display: inline-block;">View / Download PDF</a>
     </div>
     `;
   }).join("");
