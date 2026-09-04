@@ -143,22 +143,22 @@
       settlementList.innerHTML = "<p style='color:#64748b;'>No settlements found for your account yet.</p>";
       return;
     }
-    
-    settlements.sort((a, b) => new Date(b.weekEnding) - new Date(a.weekEnding));
 
-    settlementList.innerHTML = settlements.map((s, index) => {
-      let cleanDate = s.weekEnding;
+    settlementList.innerHTML = settlements.map((s) => {
+      let cleanDate = s.dateStr || s.weekEnding;
       if (cleanDate.includes('T')) {
         const parts = cleanDate.split('T')[0].split('-');
         cleanDate = `${parts[1]}/${parts[2]}/${parts[0]}`; 
       }
       
+      const downloadUrl = `${APPS_SCRIPT_URL}?fileId=${s.fileId}&token=VALID_PORTAL_SESSION`;
+
       return `
       <div class="settlement-card">
         <div class="settlement-info">
           <h3>Week Ending: ${cleanDate}</h3>
         </div>
-        <button onclick="downloadPdf('${s.pdfBase64}', '${s.fileName}')" class="btn-outline" style="background: #0f172a; color: white; border: none; cursor: pointer;">Download PDF</button>
+        <a href="${downloadUrl}" target="_blank" class="btn-outline" style="background: #0f172a; color: white; padding: 10px 18px; text-decoration: none; border-radius: 6px; display: inline-block;">Download PDF</a>
       </div>
       `;
     }).join("");
