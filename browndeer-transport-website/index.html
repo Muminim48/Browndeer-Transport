@@ -48,6 +48,19 @@
   "description": "Browndeer Transport LLC is a growing freight carrier based in Shakopee, Minnesota, operating a five-truck fleet and moving approximately 100–150 loads per month for brokers and shippers."
 }
 </script>
+<!-- Mobile menu: keep links above the backdrop and fixed to the viewport. -->
+<style>
+@media (max-width: 900px) {
+  #navBackdrop { z-index: 1; }
+  #mainNav { z-index: 2; }
+
+  /* A filtered header can constrain its fixed-position menu on phones. */
+  #siteHeader.is-scrolled {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+</style>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to main content</a>
