@@ -1,189 +1,401 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Driver Portal | Browndeer Transport</title>
-<meta name="robots" content="noindex">
-<!-- Linking to your existing stylesheet -->
-<link rel="stylesheet" href="css/styles.css">
-<style>
-  .portal-container { max-width: 600px; margin: 60px auto; padding: 20px; }
-  .settlement-card {
-    background: #ffffff;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    padding: 24px;
-    margin-bottom: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  }
-  .settlement-info h3 { font-size: 1.2rem; margin-bottom: 8px; color: #111827; }
-  .settlement-info p { font-size: 0.9rem; color: #4b5563; }
-  .hidden { display: none; }
-  .form-status.error { color: #dc2626; font-weight: 600; text-align: center; display: none; }
-  
-  /* Form basics just in case your stylesheet doesn't cover them identically */
-  .portal-form-card { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-  .field { margin-bottom: 20px; text-align: left; }
-  .field label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; }
-  .field input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
-  .btn-block { width: 100%; display: block; padding: 14px; font-size: 16px; font-weight: 600; background-color: #0f172a; color: white; border: none; border-radius: 4px; cursor: pointer; }
-  .btn-block:hover { background-color: #1e293b; }
-  .btn-outline { background: transparent; border: 1px solid #0f172a; color: #0f172a; padding: 10px 20px; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
-  .btn-outline:hover { background: #f1f5f9; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Driver Portal | Browndeer Transport</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f8fafc; color: #0f172a; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.5; }
+    [hidden] { display: none !important; }
+    .portal-header { padding: 20px; background: white; box-shadow: 0 1px 3px rgb(0 0 0 / 10%); }
+    .portal-header-inner { width: 100%; max-width: 1200px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .portal-logo { display: block; height: 50px; width: auto; }
+    .portal-container { width: 100%; max-width: 680px; margin: 60px auto; padding: 20px; }
+    .portal-form-card { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgb(0 0 0 / 5%); }
+    .portal-intro { text-align: center; margin-bottom: 30px; }
+    .portal-container h1 { margin: 0 0 10px; font-size: 1.75rem; line-height: 1.25; }
+    .portal-container p { margin: 8px 0 0; }
+    .portal-muted { color: #475569; }
+    .portal-field { margin-bottom: 20px; }
+    .portal-field label { display: block; margin-bottom: 8px; font-weight: 600; }
+    .portal-field input { width: 100%; padding: 12px; border: 1px solid #94a3b8; border-radius: 4px; font: inherit; background: white; color: #0f172a; }
+    .portal-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid #0f172a; border-radius: 4px; padding: 10px 18px; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; background: #0f172a; color: white; }
+    .portal-button:hover { background: #1e293b; color: white; }
+    .portal-button.secondary { background: transparent; color: #0f172a; }
+    .portal-button.secondary:hover { background: #e2e8f0; }
+    .portal-button:disabled { opacity: .6; cursor: wait; }
+    .portal-button:focus-visible, input:focus-visible, .portal-link:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+    .portal-button.full { width: 100%; }
+    .portal-status { margin-top: 16px; overflow-wrap: anywhere; }
+    .portal-error { color: #b91c1c; }
+    .portal-dashboard-heading { margin-bottom: 28px; }
+    .settlement-card { padding: 24px; margin-bottom: 16px; border: 1px solid #d1d5db; border-radius: 8px; background: white; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 5%); }
+    .settlement-card h2 { font-size: 1.15rem; margin: 0 0 16px; line-height: 1.4; }
+    .portal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .portal-actions .portal-button { flex: 1; }
+    .portal-signout { margin-top: 24px; }
+    .portal-note { font-size: .875rem; color: #475569; margin-top: 16px !important; }
+    .portal-link { color: #1d4ed8; text-decoration: underline; }
+    #pdfDialog { width: min(1000px, 96vw); max-height: 94vh; max-height: 94dvh; margin: auto; padding: 20px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; }
+    #pdfDialog::backdrop { background: rgb(15 23 42 / 65%); }
+    .pdf-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .pdf-heading h2 { margin: 0; font-size: 1.2rem; line-height: 1.4; }
+    #pdfFrame { display: block; width: 100%; height: 60vh; height: 60dvh; border: 1px solid #cbd5e1; margin-top: 12px; background: #f1f5f9; }
+    #pdfDialog p { font-size: .875rem; margin: 12px 0 0; color: #475569; }
+    @media (max-width: 520px) {
+      .portal-container { margin: 24px auto; padding: 16px; }
+      .portal-form-card { padding: 24px; }
+      .portal-header { padding: 16px; }
+      .portal-header .portal-button { padding: 8px 12px; font-size: .875rem; }
+      .settlement-card { padding: 20px; }
+      #pdfDialog { padding: 14px; }
+    }
+  </style>
 </head>
-<body style="background-color: #f8fafc; font-family: 'Arial', sans-serif;">
-
-<header style="background: white; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;">
-  <div class="wrap" style="width: 100%; max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between;">
-    <a class="brand" href="index.html">
-        <img src="assets/img/logo.png" alt="Browndeer Transport" style="height: 50px;">
-    </a>
-    <div class="header-actions" style="margin-top: 10px;">
-        <a class="btn-outline" href="index.html">Back to Home</a>
+<body>
+  <header class="portal-header">
+    <div class="portal-header-inner">
+      <a href="index.html" aria-label="Browndeer Transport home"><img class="portal-logo" src="assets/img/logo.png" alt="Browndeer Transport"></a>
+      <a class="portal-button secondary" href="index.html">Back to Home</a>
     </div>
-  </div>
-</header>
-
-<main class="section wrap portal-container">
-  
-  <!-- Login Screen -->
-  <div id="loginScreen" class="portal-form-card">
-    <div style="text-align: center; margin-bottom: 30px;">
-      <h2>Driver & Unit Portal</h2>
-      <p style="color: #64748b;">Access your weekly settlement statements.</p>
-    </div>
-    
-    <form id="portalLogin">
-      <div class="field full">
-        <label for="driverId">Username or Unit Number</label>
-        <input type="text" id="driverId" placeholder="e.g. Aabdi or 3122" required>
+  </header>
+  <main class="portal-container">
+    <section id="loginScreen" class="portal-form-card" aria-labelledby="loginTitle">
+      <div class="portal-intro">
+        <h1 id="loginTitle">Driver &amp; Unit Portal</h1>
+        <p class="portal-muted">Access your weekly settlement statements.</p>
       </div>
-      <div class="field full">
-        <label for="pin">4-Digit PIN</label>
-        <input type="password" id="pin" required maxlength="4" inputmode="numeric">
+      <form id="portalLogin">
+        <div class="portal-field">
+          <label for="driverId">Username or Unit Number</label>
+          <input id="driverId" type="text" placeholder="e.g. Aabdi or 3122" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="150" required>
+        </div>
+        <div class="portal-field">
+          <label for="pin">PIN</label>
+          <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="128" required>
+        </div>
+        <button class="portal-button full" type="submit" id="loginBtn">View Settlements</button>
+        <p id="loginError" class="portal-status portal-error" role="alert" hidden></p>
+        <p id="loginNotice" class="portal-status portal-muted" role="status" hidden></p>
+      </form>
+    </section>
+    <section id="dashboardScreen" aria-labelledby="dashboardTitle" hidden>
+      <div class="portal-dashboard-heading">
+        <h1 id="dashboardTitle" tabindex="-1">Recent Settlements</h1>
+        <p class="portal-muted">Welcome, <span id="driverDisplay"></span>.</p>
+        <p class="portal-muted">Preview your statement or save a PDF copy.</p>
       </div>
-      <button class="btn-block" type="submit" id="loginBtn">View Settlements</button>
-      <div id="loginError" class="form-status error" style="margin-top: 16px;">Invalid Username or PIN.</div>
-    </form>
-  </div>
-
-  <!-- Dashboard Screen (Hidden by default) -->
-  <div id="dashboardScreen" class="hidden">
-    <div style="margin-bottom: 30px;">
-      <h2>Recent Settlements</h2>
-      <p style="color: #64748b;">Click below to download your statement PDF.</p>
+      <div id="settlementList"></div>
+      <p id="portalError" class="portal-status portal-error" role="alert" hidden></p>
+      <div id="downloadNotice" class="portal-status" role="status" hidden></div>
+      <button class="portal-button secondary portal-signout" type="button" id="logoutBtn">Log Out</button>
+      <p class="portal-note">For privacy, this page signs you out after 15 minutes without activity on the portal page.</p>
+    </section>
+    <noscript><p class="portal-status portal-error">Enable JavaScript to use the driver portal.</p></noscript>
+  </main>
+  <dialog id="pdfDialog" aria-labelledby="pdfTitle">
+    <div class="pdf-heading">
+      <h2 id="pdfTitle">Statement Preview</h2>
+      <button class="portal-button secondary" id="closePreview" type="button">Close</button>
     </div>
-    
-    <div id="settlementList"></div>
-    
-    <button class="btn-outline" id="logoutBtn" style="margin-top: 24px;">Log Out</button>
-  </div>
+    <div class="portal-actions">
+      <a id="previewDownload" class="portal-button" download>Download PDF</a>
+      <a id="previewOpen" class="portal-button secondary" target="_blank" rel="noopener noreferrer">Open PDF</a>
+    </div>
+    <p>If your browser does not display the PDF below, choose Open PDF or Download PDF.</p>
+    <iframe id="pdfFrame" title="Settlement PDF preview" referrerpolicy="no-referrer"></iframe>
+  </dialog>
+  <script>
+  (() => {
+    'use strict';
+    // Preserved from your current portal. Update the SAME Apps Script deployment.
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbywl6G4laAJ0Qv9i5OFj6LXTV8Vz8mgIe4wZJa9pX3Rq2TxjwDE88JSF_Dd89GROWyEKw/exec';
+    const IDLE_MS = 15 * 60 * 1000;
+    const MAX_PDF_BYTES = 10 * 1024 * 1024;
+    const byId = id => document.getElementById(id);
+    const form = byId('portalLogin');
+    const loginBtn = byId('loginBtn');
+    const dialog = byId('pdfDialog');
+    const controllers = new Set();
+    const urls = new Set();
+    const downloadTimers = new Set();
+    let credentials = null;
+    let generation = 0;
+    let lastActivity = 0;
+    let idleTimer = null;
+    let pdfBusy = false;
+    let previewUrl = null;
 
-</main>
+    function message(id, text) {
+      const el = byId(id);
+      el.textContent = text || '';
+      el.hidden = !text;
+    }
 
-<script>
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbywl6G4laAJ0Qv9i5OFj6LXTV8Vz8mgIe4wZJa9pX3Rq2TxjwDE88JSF_Dd89GROWyEKw/exec";
+    function revoke(url) {
+      if (url && urls.delete(url)) URL.revokeObjectURL(url);
+    }
 
-  const loginForm = document.getElementById("portalLogin");
-  const loginBtn = document.getElementById("loginBtn");
-  const loginError = document.getElementById("loginError");
-  const loginScreen = document.getElementById("loginScreen");
-  const dashboardScreen = document.getElementById("dashboardScreen");
-  const settlementList = document.getElementById("settlementList");
+    function clearPreview() {
+      byId('pdfFrame').removeAttribute('src');
+      byId('previewDownload').removeAttribute('href');
+      byId('previewDownload').removeAttribute('download');
+      byId('previewOpen').removeAttribute('href');
+      revoke(previewUrl);
+      previewUrl = null;
+    }
 
-  loginForm.addEventListener("submit", function(e) {
-    e.preventDefault();
-    loginBtn.disabled = true;
-    loginBtn.textContent = "Authenticating...";
-    loginError.style.display = "none";
-
-    const payload = {
-      driverId: document.getElementById("driverId").value,
-      pin: document.getElementById("pin").value
-    };
-
-    fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    })
-    .then(async response => {
-      const text = await response.text();
-      try {
-        const data = JSON.parse(text);
-        if (data.success) {
-          renderSettlements(data.settlements);
-          loginScreen.classList.add("hidden");
-          dashboardScreen.classList.remove("hidden");
-        } else {
-          loginError.textContent = data.error || "Invalid Username or PIN.";
-          loginError.style.display = "block";
-        }
-      } catch (err) {
-        loginError.textContent = "Server response error.";
-        loginError.style.display = "block";
-      }
-    })
-    .catch(error => {
-      loginError.textContent = "Connection error. Please try again.";
-      loginError.style.display = "block";
-    })
-    .finally(() => {
+    function logout(notice = '') {
+      generation++;
+      credentials = null;
+      clearTimeout(idleTimer);
+      controllers.forEach(controller => controller.abort());
+      controllers.clear();
+      downloadTimers.forEach(timer => clearTimeout(timer));
+      downloadTimers.clear();
+      if (dialog.open) dialog.close();
+      clearPreview();
+      Array.from(urls).forEach(revoke);
+      pdfBusy = false;
+      form.reset();
       loginBtn.disabled = false;
-      loginBtn.textContent = "View Settlements";
-    });
-  });
+      loginBtn.textContent = 'View Settlements';
+      byId('settlementList').replaceChildren();
+      byId('driverDisplay').textContent = '';
+      byId('dashboardScreen').hidden = true;
+      byId('loginScreen').hidden = false;
+      message('portalError', '');
+      message('downloadNotice', '');
+      message('loginError', '');
+      message('loginNotice', notice);
+    }
 
-  function renderSettlements(settlements) {
-  if (!settlements || settlements.length === 0) {
-    settlementList.innerHTML = "<p style='color:#64748b;'>No settlements found for your account yet.</p>";
-    return;
-  }
+    function signedIn() {
+      if (!credentials) return false;
+      if (Date.now() - lastActivity >= IDLE_MS) {
+        logout('You were signed out after inactivity. Please sign in again.');
+        return false;
+      }
+      return true;
+    }
 
-  // Sort settlements newest to oldest
-  settlements.sort((a, b) => new Date(b.weekEnding || b.dateStr || b.date) - new Date(a.weekEnding || a.dateStr || a.date));
+    function checkIdle() {
+      if (!signedIn()) return;
+      idleTimer = setTimeout(checkIdle, Math.max(1000, IDLE_MS - (Date.now() - lastActivity)));
+    }
 
-  settlementList.innerHTML = settlements.map(s => {
-    // 1. Grab whichever date field exists
-    let rawDate = s.weekEnding || s.dateStr || s.date || "";
-    let cleanDate = rawDate;
+    function activity() {
+      // An expired page must not regain access simply because it receives a click.
+      if (signedIn()) lastActivity = Date.now();
+    }
 
-    // 2. Direct Date Object Parsing (NO STRING SPLITTING)
-    if (rawDate) {
-      const d = new Date(rawDate);
-      if (!isNaN(d.getTime())) {
-        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(d.getUTCDate()).padStart(2, '0');
-        const year = d.getUTCFullYear();
-        cleanDate = `${month}/${day}/${year}`;
+    async function request(payload) {
+      const controller = new AbortController();
+      controllers.add(controller);
+      let timedOut = false;
+      const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 60000);
+      try {
+        const response = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify(payload),
+          credentials: 'omit',
+          redirect: 'follow',
+          referrerPolicy: 'no-referrer',
+          signal: controller.signal
+        });
+        if (!response.ok) throw new Error('The portal is unavailable. Please try again shortly.');
+        let result;
+        try { result = await response.json(); }
+        catch (error) {
+          if (controller.signal.aborted) throw error;
+          throw new Error('The portal returned an unexpected response. Please contact dispatch.');
+        }
+        if (!result || result.success !== true) {
+          throw new Error(result && typeof result.error === 'string' ? result.error : 'Unable to complete the request.');
+        }
+        return result;
+      } catch (error) {
+        if (timedOut) throw new Error('The request timed out. Please try again.');
+        if (error instanceof TypeError) throw new Error('Connection failed. Check your internet connection and try again.');
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+        controllers.delete(controller);
       }
     }
 
-    // 3. Fallback link handler (uses pdfUrl or constructs Drive preview)
-    const fileUrl = s.pdfUrl || (s.fileId ? `https://drive.google.com/file/d/${s.fileId}/preview` : '#');
+    function renderSettlements(settlements) {
+      const list = byId('settlementList');
+      list.replaceChildren();
+      if (!settlements.length) {
+        const empty = document.createElement('p');
+        empty.textContent = 'No settlements found for your account yet.';
+        list.appendChild(empty);
+        return;
+      }
+      // The backend supplies formatted dates in chronological order.
+      settlements.forEach(stub => {
+        const card = document.createElement('article');
+        card.className = 'settlement-card';
+        const heading = document.createElement('h2');
+        const date = typeof stub.weekEnding === 'string' ? stub.weekEnding : 'Date unavailable';
+        heading.textContent = 'Week Ending: ' + date;
+        const actions = document.createElement('div');
+        actions.className = 'portal-actions';
+        ['Preview', 'Download'].forEach(label => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'portal-button' + (label === 'Preview' ? ' secondary' : '');
+          button.textContent = label;
+          button.setAttribute('aria-label', label + ' statement for ' + date);
+          button.addEventListener('click', () => loadPdf(stub.fileId, label === 'Preview', button));
+          actions.appendChild(button);
+        });
+        card.append(heading, actions);
+        list.appendChild(card);
+      });
+    }
 
-    return `
-    <div class="settlement-card">
-      <div class="settlement-info">
-        <h3>Week Ending: ${cleanDate}</h3>
-      </div>
-      <a href="${fileUrl}" target="_blank" class="btn-outline" style="background: #0f172a; color: white; padding: 10px 18px; text-decoration: none; border-radius: 6px; display: inline-block;">View / Download PDF</a>
-    </div>
-    `;
-  }).join("");
-}
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (loginBtn.disabled) return;
+      const driverId = byId('driverId').value.trim();
+      const pin = byId('pin').value.trim();
+      if (!driverId || !pin) {
+        message('loginError', 'Enter your username or unit number and PIN.');
+        return;
+      }
+      const current = ++generation;
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Authenticating...';
+      message('loginError', '');
+      message('loginNotice', '');
+      try {
+        const result = await request({action: 'list', driverId, pin});
+        if (current !== generation) return;
+        if (!Array.isArray(result.settlements) || result.settlements.some(stub =>
+          !stub || typeof stub.fileId !== 'string' || !/^[A-Za-z0-9_-]{10,200}$/.test(stub.fileId))) {
+          throw new Error('The statement list is unavailable. Please contact dispatch.');
+        }
+        renderSettlements(result.settlements);
+        credentials = {driverId, pin};
+        byId('pin').value = '';
+        byId('driverDisplay').textContent = typeof result.driverName === 'string' ? result.driverName : driverId;
+        byId('loginScreen').hidden = true;
+        byId('dashboardScreen').hidden = false;
+        lastActivity = Date.now();
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(checkIdle, IDLE_MS);
+        byId('dashboardTitle').focus();
+      } catch (error) {
+        if (current === generation) {
+          byId('pin').value = '';
+          message('loginError', error.message || 'Unable to sign in.');
+        }
+      } finally {
+        if (current === generation) {
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'View Settlements';
+        }
+      }
+    });
 
-  document.getElementById("logoutBtn").addEventListener("click", () => {
-    dashboardScreen.classList.add("hidden");
-    loginScreen.classList.remove("hidden");
-    loginForm.reset();
-    settlementList.innerHTML = "";
-  });
-</script>
+    function pdfBlob(result) {
+      if (result.mimeType !== 'application/pdf' || typeof result.base64 !== 'string' ||
+          !result.base64 || result.base64.length > 4 * Math.ceil(MAX_PDF_BYTES / 3)) {
+        throw new Error('The PDF could not be opened. Please contact dispatch.');
+      }
+      const binary = atob(result.base64);
+      if (binary.length > MAX_PDF_BYTES || !binary.startsWith('%PDF-')) {
+        throw new Error('The response is not a valid PDF. Please contact dispatch.');
+      }
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return new Blob([bytes], {type: 'application/pdf'});
+    }
 
+    function filename(value) {
+      const clean = String(value || 'Statement.pdf').replace(/[\x00-\x1f\x7f/\\]/g, '_').slice(0, 180);
+      return /\.pdf$/i.test(clean) ? clean : clean + '.pdf';
+    }
+
+    async function loadPdf(fileId, preview, button) {
+      if (!signedIn() || pdfBusy) return;
+      activity();
+      pdfBusy = true;
+      const current = generation;
+      const original = button.textContent;
+      const buttons = Array.from(byId('settlementList').querySelectorAll('button'));
+      buttons.forEach(el => { el.disabled = true; });
+      button.textContent = 'Loading...';
+      message('portalError', '');
+      try {
+        const result = await request({action: 'download', ...credentials, fileId});
+        if (current !== generation || !signedIn()) return;
+        const blob = pdfBlob(result);
+        const url = URL.createObjectURL(blob);
+        urls.add(url);
+        const name = filename(result.fileName);
+        if (preview) {
+          clearPreview();
+          previewUrl = url;
+          byId('previewDownload').href = url;
+          byId('previewDownload').download = name;
+          byId('previewOpen').href = url;
+          byId('pdfFrame').src = url;
+          dialog.showModal();
+        } else {
+          const notice = byId('downloadNotice');
+          notice.replaceChildren(document.createTextNode('Your PDF is ready. If the download did not start, '));
+          const link = document.createElement('a');
+          link.className = 'portal-link';
+          link.href = url;
+          link.download = name;
+          link.textContent = 'save it here';
+          notice.appendChild(link);
+          notice.hidden = false;
+          link.click();
+          // Keep a real, clickable link for browsers requiring another user tap.
+          const timer = setTimeout(() => {
+            revoke(url);
+            if (notice.contains(link)) {
+              message('downloadNotice', 'To download another copy, select Download again.');
+            }
+            downloadTimers.delete(timer);
+          }, 2 * 60 * 1000);
+          downloadTimers.add(timer);
+        }
+      } catch (error) {
+        if (current === generation) message('portalError', error.message || 'Unable to open the statement.');
+      } finally {
+        if (current === generation) {
+          pdfBusy = false;
+          buttons.forEach(el => { el.disabled = false; });
+          button.textContent = original;
+        }
+      }
+    }
+
+    byId('closePreview').addEventListener('click', () => dialog.close());
+    dialog.addEventListener('close', clearPreview);
+    byId('logoutBtn').addEventListener('click', () => {
+      logout('You have been signed out.');
+      byId('driverId').focus();
+    });
+    ['pointerdown', 'keydown', 'scroll'].forEach(type => {
+      document.addEventListener(type, activity, {capture: true, passive: true});
+    });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) signedIn(); });
+    window.addEventListener('focus', () => signedIn());
+    // Clear credentials and PDFs before this page can enter the back/forward cache.
+    window.addEventListener('pagehide', () => logout());
+    window.addEventListener('pageshow', event => { if (event.persisted) logout(); });
+  })();
+  </script>
 </body>
 </html>
