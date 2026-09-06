@@ -74,8 +74,8 @@
 <body>
   <header class="portal-header">
     <div class="portal-header-inner">
-      <a href="index.html" aria-label="Browndeer Transport home"><img class="portal-logo" src="assets/img/logo.png" alt="Browndeer Transport"></a>
-      <a class="portal-button secondary" href="index.html">Back to Home</a>
+      <a aria-label='Browndeer Transport home' href='/'><img class="portal-logo" src="assets/img/logo.png" alt="Browndeer Transport"></a>
+      <a class='portal-button secondary' href='/'>Back to Home</a>
     </div>
   </header>
   <main class="portal-container">
@@ -328,9 +328,7 @@ globalThis.fetch = function(input, options) {
       previewZoom = 1;
       updatePdfControls();
       message('pdfStatus', 'Preparing preview…');
-      previewBodyOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      dialog.showModal();
+      if (!dialog.open || !signedIn()) return;
       try {
         const pdfjs = await loadPdfLibrary();
         const bytes = new Uint8Array(await blob.arrayBuffer());
@@ -547,20 +545,43 @@ globalThis.fetch = function(input, options) {
       activity();
       pdfBusy = true;
       const current = generation;
+      let previewRun = null;
       const original = button.textContent;
       const buttons = Array.from(byId('settlementList').querySelectorAll('button'));
       buttons.forEach(el => { el.disabled = true; });
       button.textContent = 'Loading...';
       message('portalError', '');
       try {
-        const result = await request({action: 'download', ...credentials, fileId});
+        if (preview) {
+          clearPreview();
+          previewRun = previewGeneration;
+          previewPage = 1;
+          fitMode = 'width';
+          previewZoom = 1;
+          updatePdfControls();
+          message('pdfStatus', 'Loading your statement…');
+          previewBodyOverflow = document.body.style.overflow;
+          document.body.style.overflow = 'hidden';
+          dialog.showModal();
+        }
+        const pdfRequest = request({action: 'download', ...credentials, fileId});
+        // Start the request first. Yield before decoding the embedded viewer,
+        // allowing the loading dialog to appear while the server works.
+        const viewerReady = preview
+          ? new Promise(resolve => setTimeout(resolve, 0))
+              .then(() => {
+                if (current !== generation || previewRun !== previewGeneration || !dialog.open) return null;
+                return loadPdfLibrary();
+              }).catch(() => null)
+          : Promise.resolve(null);
+        const [result] = await Promise.all([pdfRequest, viewerReady]);
         if (current !== generation || !signedIn()) return;
+        if (preview && (previewRun !== previewGeneration || !dialog.open)) return;
         const blob = pdfBlob(result);
         const url = URL.createObjectURL(blob);
         urls.add(url);
         const name = filename(result.fileName);
         if (preview) {
-          clearPreview();
           previewUrl = url;
           byId('previewDownload').href = url;
           byId('previewDownload').download = name;
@@ -588,7 +609,13 @@ globalThis.fetch = function(input, options) {
           downloadTimers.add(timer);
         }
       } catch (error) {
-        if (current === generation) message('portalError', error.message || 'Unable to open the statement.');
+        if (current === generation) {
+          const text = error.message || 'Unable to open the statement.';
+          message('portalError', text);
+          if (preview && previewRun === previewGeneration && dialog.open) {
+            message('pdfStatus', text + ' Close the preview and try again.');
+          }
+        }
       } finally {
         if (current === generation) {
           pdfBusy = false;
