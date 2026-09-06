@@ -91,6 +91,7 @@
       </div>
       <div id="settlementList"></div>
       <p id="portalError" class="portal-status portal-error" role="alert" hidden></p>
+      <div id="previewNotice" class="portal-status" role="status" hidden></div>
       <div id="downloadNotice" class="portal-status" role="status" hidden></div>
       <button class="portal-button secondary portal-signout" type="button" id="logoutBtn">Log Out</button>
       <p class="portal-note">For privacy, this page signs you out after 15 minutes without activity on the portal page.</p>
@@ -122,6 +123,7 @@
     const dialog = byId('pdfDialog');
     const controllers = new Set();
     const urls = new Set();
+    const pendingPreviewTabs = new Set();
     const downloadTimers = new Set();
     let credentials = null;
     let generation = 0;
@@ -152,6 +154,8 @@
     function logout(notice = '') {
       generation++;
       credentials = null;
+      pendingPreviewTabs.forEach(closePendingTab);
+      pendingPreviewTabs.clear();
       clearTimeout(idleTimer);
       controllers.forEach(controller => controller.abort());
       controllers.clear();
@@ -170,6 +174,7 @@
       byId('loginScreen').hidden = false;
       message('portalError', '');
       message('downloadNotice', '');
+      message('previewNotice', '');
       message('loginError', '');
       message('loginNotice', notice);
     }
@@ -324,10 +329,72 @@
       return /\.pdf$/i.test(clean) ? clean : clean + '.pdf';
     }
 
+    function closePendingTab(tab) {
+      pendingPreviewTabs.delete(tab);
+      try { if (tab && !tab.closed) tab.close(); } catch (error) { /* Already closed. */ }
+    }
+
+    function useFullTabPreview() {
+      return window.matchMedia('(max-width: 900px)').matches ||
+        window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
+        typeof dialog.showModal !== 'function';
+    }
+
+    function reservePreviewTab() {
+      let tab = null;
+      try {
+        // Run synchronously during the tap, BEFORE awaiting the PDF request.
+        // Setting opener afterwards preserves our handle while isolating the tab.
+        tab = window.open('about:blank', '_blank');
+        if (!tab) return null;
+        tab.opener = null;
+        pendingPreviewTabs.add(tab);
+        tab.document.title = 'Loading statement';
+        const viewport = tab.document.createElement('meta');
+        viewport.name = 'viewport';
+        viewport.content = 'width=device-width, initial-scale=1';
+        tab.document.head.appendChild(viewport);
+        tab.document.body.style.cssText = 'font:16px Arial,sans-serif;padding:32px;line-height:1.5;color:#0f172a;background:#f8fafc';
+        tab.document.body.textContent = 'Loading your statement… Please keep this tab open.';
+        return tab;
+      } catch (error) {
+        closePendingTab(tab);
+        return null;
+      }
+    }
+
+    function offerFullTabPdf(url, tab) {
+      let opened = false;
+      if (tab) {
+        try {
+          if (!tab.closed) {
+            // Fit is a hint to the native viewer; zoom remains browser-controlled.
+            tab.location.replace(url + '#view=Fit');
+            opened = true;
+          }
+        } catch (error) { /* A normal link below provides a second way to open. */ }
+        if (opened) pendingPreviewTabs.delete(tab);
+        else closePendingTab(tab);
+      }
+      const notice = byId('previewNotice');
+      notice.replaceChildren(document.createTextNode(opened ?
+        'Your statement opened in a new tab. ' : 'Your statement is ready. Tap the link to preview it. '));
+      const link = document.createElement('a');
+      link.className = 'portal-link';
+      link.href = url + '#view=Fit';
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = 'Open PDF';
+      notice.appendChild(link);
+      notice.hidden = false;
+    }
+
     async function loadPdf(fileId, preview, button) {
       if (!signedIn() || pdfBusy) return;
       activity();
       pdfBusy = true;
+      const fullTab = preview && useFullTabPreview();
+      const previewTab = fullTab ? reservePreviewTab() : null;
       const current = generation;
       const original = button.textContent;
       const buttons = Array.from(byId('settlementList').querySelectorAll('button'));
@@ -336,12 +403,17 @@
       message('portalError', '');
       try {
         const result = await request({action: 'download', ...credentials, fileId});
-        if (current !== generation || !signedIn()) return;
+        if (current !== generation || !signedIn()) {
+          closePendingTab(previewTab);
+          return;
+        }
         const blob = pdfBlob(result);
         const url = URL.createObjectURL(blob);
         urls.add(url);
         const name = filename(result.fileName);
-        if (preview) {
+        if (fullTab) {
+          offerFullTabPdf(url, previewTab);
+        } else if (preview) {
           clearPreview();
           previewUrl = url;
           byId('previewDownload').href = url;
@@ -371,6 +443,7 @@
           downloadTimers.add(timer);
         }
       } catch (error) {
+        closePendingTab(previewTab);
         if (current === generation) message('portalError', error.message || 'Unable to open the statement.');
       } finally {
         if (current === generation) {
